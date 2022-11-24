@@ -70,5 +70,7 @@ There are a few known areas where votes are currently categorized in a different
 * As mentioned in the section "Handling Write-In votes", write-in votes are incorrectly all considered votes for a single candidate in this project. Ballots that only rank a write-in candidate are also considered "Exhausted", while they are officially categorized as "Blank"
 * When transferring votes between rounds, the Alaska Division of Elections distinguishes between "Exhausted" votes (presumably those with no further rankings) and "Overvotes" (presumably with addition invalid rankings). This project does not distinguish between those two categories, listing both as "Exhausted".
 
-## Development Plans
+## Notes for Developmers
+If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22sspg), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rvc_processor.R` before running the file.
+
 This project was developed with the top priority of making summary data available shortly after the release of the 2022 CVR data. As such, things like code clarity, documentation, efficiency and usability were not prioritized. As an open-source project, users are welcome to use the code as it is now, but should be aware that there may be substantial (i.e breaking) updates to the codebase shortly.
