@@ -23,62 +23,77 @@ eliminate_ambiguous_marks = function(marks){
   return(marks[!is_mark_ambiguous(marks)])
 }
 
-eliminate_overvotes = function(marks){
-  if(length(marks) == 0){
-    return(marks)
+eliminate_overvotes = function(marks_list){
+  if(length(marks_list) == 0){
+    return(marks_list)
   }
-  is_overvote = sapply(marks, function(mark) 9 %in% unlist(mark$OutstackConditionIds))
-  has_overvote = any(is_overvote)
-  if (has_overvote){
-    first_overvote = min(which(is_overvote))
-    eliminate_mark = is_overvote
-    eliminate_mark[first_overvote:length(eliminate_mark)] = TRUE
-    return(marks[!eliminate_mark])
+  is_overvote = sapply(marks_list, function(rank_list) length(rank_list) > 1)
+  overvotes = which(is_overvote)
+  if (length(overvotes) > 0){
+    first_overvote = min(overvotes)
+    if(first_overvote == 1){
+      return(list())
+    } else {
+      return(marks_list[1:(first_overvote - 1)])
+    }
   } else {
-    return(marks)
+    return(marks_list)
   }
 }
 
+marks_to_list = function(marks){
+  rslt_list = list()
+  for (mark in marks){
+    rank = mark$Rank
+    c_id = mark$CandidateId
+    if (length(rslt_list) < rank){
+      rslt_list[[rank]] = c_id
+    } else {
+      rslt_list[[rank]] = c(rslt_list[[rank]], c_id)
+    }
+  }
+  return(rslt_list)
+}
+
 eliminate_dup_candidates = function(marks){
-  if (length(marks) == 0){
+  if(length(marks) == 0){
     return(marks)
   }
-  can_ids = sapply(marks, function(mark) mark$CandidateId)
-  return(marks[!duplicated(can_ids)])
+  c_duplicated = duplicated(marks)
+  c_null = sapply(marks, function(x) is.null(x))
+  ranks_to_remove = rev(which(c_duplicated & !c_null))
+  for(rank in ranks_to_remove){
+    marks[rank] = list(NULL)
+  }
+  return(marks)
 }
 
 eliminate_skips = function(marks){
   if (length(marks) == 0){
-    return(marks)
+    return(NULL)
   }
-  ranks = sapply(marks, function(mark) mark$Rank)
+  ranks = which(!sapply(marks, function(mark) is.null(mark)))
   gaps = diff(c(0, ranks))
   large_gaps = which(gaps >= 3)
   if (length(large_gaps) == 0){
-    return(marks)
+    return(unlist(marks))
   }
   first_gap = large_gaps[1]
   if (first_gap == 1){
-    return(list())
+    return(NULL)
   } else {
-    return(marks[1:(first_gap - 1)])
+    return(unlist(marks[1:(first_gap - 1)]))
   }
-  
 }
 
 get_ranking = function(session, race_id){
   marks = get_marks(session, race_id)
-  unambiguous_marks = eliminate_ambiguous_marks(marks) # 412367
-  marks_no_over = eliminate_overvotes(unambiguous_marks) # 410658
+  unambiguous_marks = eliminate_ambiguous_marks(marks)
+  marks_list = marks_to_list(unambiguous_marks)
+  marks_no_over = eliminate_overvotes(marks_list)
   marks_no_dups = eliminate_dup_candidates(marks_no_over)
-  marks_no_skips = eliminate_skips(marks_no_dups) # 410190
-  if(length(marks_no_skips) > 0){
-    candidate_rankings = sapply(marks_no_skips, function(mark) mark$CandidateId)
-  } else {
-    candidate_rankings = c()
-  }
-  return(candidate_rankings)
-  
+  marks_no_skips = eliminate_skips(marks_no_dups)
+  return(marks_no_skips)
 }
 
 get_precinct_portion = function(session){
