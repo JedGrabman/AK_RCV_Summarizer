@@ -202,7 +202,7 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
     area_rankings = lapply(area_sessions, function(x) get_ranking(x, race_id))
     has_ranking = sapply(area_rankings, length) > 0
     area_rankings[has_ranking] = lapply(area_rankings[has_ranking], function(x) x[1:min(length(x), num_candidates - 1)])
-    area_ranking_names = sapply(area_rankings, function(x) sapply(x, function(y) race_lnames[y == race_candidate_ids]))
+    area_ranking_names = lapply(area_rankings, function(x) sapply(x, function(y) race_lnames[y == race_candidate_ids]))
     rank_paste = sapply(area_ranking_names, function(x) paste(x, collapse = ";"))
     result_summary = table(rank_paste)
     names(result_summary)[names(result_summary) == ""] = "Blank"
