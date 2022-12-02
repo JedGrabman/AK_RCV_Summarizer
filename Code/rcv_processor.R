@@ -32,9 +32,11 @@ eliminate_overvotes = function(marks_list){
   if (length(overvotes) > 0){
     first_overvote = min(overvotes)
     if(first_overvote == 1){
-      return(list())
+      return(list("Overvote"))
     } else {
-      return(marks_list[1:(first_overvote - 1)])
+      return_list = marks_list[1:(first_overvote - 1)]
+      return_list[[first_overvote]] = "Overvote"
+      return(return_list)
     }
   } else {
     return(marks_list)
@@ -128,7 +130,7 @@ get_precinct_portion_ballots = function(precinct_portion_id, sessions){
 
 get_last_place = function(df){
   first_place_names = unique(unlist(df[1,]))
-  first_place_names = first_place_names[!(first_place_names %in% c("Blank", "Exhausted"))]
+  first_place_names = first_place_names[!(first_place_names %in% c("Blank", "Exhausted", "Overvote"))]
   num_ranked = length(first_place_names) - 1
   vote_rows = c((num_ranked + 1):nrow(df))
   first_votes_by_name = c()
@@ -188,8 +190,8 @@ eliminate_last_place = function(df, num_ranked){
 
 process_session_data = function(sessions, race_id, get_area_desc, race_candidates_df){
   num_candidates = nrow(race_candidates_df)
-  race_candidate_ids = race_candidates_df$Id
-  race_candidate_names = race_candidates_df$Description
+  race_candidate_ids = c(race_candidates_df$Id, "Overvote")
+  race_candidate_names = c(race_candidates_df$Description, "Overvote")
   race_lnames = sapply(strsplit(race_candidate_names, ","), function(x) x[1])
   
   session_areas = sapply(sessions, get_area_desc)

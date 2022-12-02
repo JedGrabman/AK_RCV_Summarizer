@@ -51,20 +51,17 @@ While the CVR indicates when a vote is for a write-in candidate, it does not ind
 ### Accuracy
 Summarizing the 2022 Special General Election using the previous algorithm and comparing them to the [official results](https://www.elections.alaska.gov/results/22SSPG/RcvDetailedReport.pdf) yielded the following:
 
-1st Choice Results|Begich|Palin|Peltola
---|--|--|--
-Actual|53,810|58,973|75,799
-Generated|53,810|58,971|75,799
-Error|0|2|0
+1st Choice Results|Begich|Palin|Peltola|Blanks|Overvote
+--|--:|--:|--:|--:|--:
+Actual|53,810|58,973|75,799|3,412|295
+Generated|53,810|58,971|75,799|3,411|298
+Error|0|2|0|1|3
 
-Transfers|Begich -> Palin|Begich -> Peltola|Begich -> Exhausted
---|--|--|--
-Actual|27,053|15,467|11,290
-Generated|27,053|15,466|11,291
-Error|0|1|1
-
-#### Categorization of Votes
-The Alaska Division of Elections tabulates a category for "Overvotes" (presumably those ballots where a voter has ranked multiple candidates with the same ranking). This project currently does not identify overvotes in CSV outputs, instead treating them as exhausted ballots, or blanks.
+Transfers|Begich -> Palin|Begich -> Peltola|Begich -> Exhausted|Begich -> Overvote
+--|--:|--:|--:|--:
+Actual|27,053|15,467|11,243|47
+Generated|27,053|15,466|11,243|48
+Error|0|1|0|1
 
 ## Notes for Developmers
 If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22sspg), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rvc_processor.R` before running the file.
