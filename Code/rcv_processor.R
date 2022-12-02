@@ -128,7 +128,7 @@ get_precinct_portion_ballots = function(precinct_portion_id, sessions){
 
 get_last_place = function(df){
   first_place_names = unique(unlist(df[1,]))
-  first_place_names = first_place_names[!(first_place_names %in% c("None", "Exhausted"))]
+  first_place_names = first_place_names[!(first_place_names %in% c("Blank", "Exhausted"))]
   num_ranked = length(first_place_names) - 1
   vote_rows = c((num_ranked + 1):nrow(df))
   first_votes_by_name = c()
@@ -143,22 +143,24 @@ get_last_place = function(df){
   
 }
 
-
-eliminate_last_place = function(df, num_ranked){
+eliminate_candidate = function(df, num_ranked, candidate_to_eliminate, is_write_in = FALSE){
   results_df = as.data.frame(c(0))[-1,-1]
-  eliminated_candidate = get_last_place(df)
   vote_rows = c(num_ranked:nrow(df))
   name_rows = c(1:(num_ranked - 2))
   
   for(i in c(ncol(df):1)){
     col_name_order = df[c(1:(num_ranked - 1)),i]
-    non_elim_candidates = col_name_order[col_name_order != eliminated_candidate]
+    non_elim_candidates = col_name_order[col_name_order != candidate_to_eliminate]
     non_elim_candidates = non_elim_candidates[non_elim_candidates != ""]
     if(length(non_elim_candidates) == 0){
-      non_elim_candidates = "Exhausted"
+      if (is_write_in){
+        non_elim_candidates = "Blank"
+      } else {
+        non_elim_candidates = "Exhausted"
+      }
     }
     if(length(non_elim_candidates) == num_ranked - 1){
-      non_elim_candidates = non_elim_candidates[c(1:(num_ranked -2))]
+      non_elim_candidates = non_elim_candidates[c(1:(num_ranked - 2))]
     }
     num_non_elim = length(non_elim_candidates)
     pasted_names = paste(non_elim_candidates, collapse = ";")
@@ -173,10 +175,15 @@ eliminate_last_place = function(df, num_ranked){
       results_df[name_rows, pasted_names] = non_elim_candidates
       results_df[vote_rows - 1, pasted_names] = df[vote_rows ,i]
     }
-              
+    
   }
   rownames(results_df) = rownames(df)[-c(num_ranked - 1)]
   return(results_df)
+}
+
+eliminate_last_place = function(df, num_ranked){
+  candidate_last = get_last_place(df)
+  return(eliminate_candidate(df, num_ranked, candidate_last))
 }
 
 process_session_data = function(sessions, race_id, get_area_desc, race_candidates_df){
@@ -188,7 +195,6 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
   session_areas = sapply(sessions, get_area_desc)
   area_descs = unique(session_areas)
   area_results = as.data.frame(c(0))[-1,-1]
-  # length(precinct_ids)
   for (i in c(1:length(area_descs))){
     print(i)
     area_desc = area_descs[i]
@@ -199,7 +205,7 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
     area_ranking_names = sapply(area_rankings, function(x) sapply(x, function(y) race_lnames[y == race_candidate_ids]))
     rank_paste = sapply(area_ranking_names, function(x) paste(x, collapse = ";"))
     result_summary = table(rank_paste)
-    names(result_summary)[names(result_summary) == ""] = "None"
+    names(result_summary)[names(result_summary) == ""] = "Blank"
     for (name in names(result_summary)){
       area_results[area_descs[i], name] = result_summary[name]
     }
@@ -221,10 +227,12 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
   
   area_rank_results = rbind(name_df, area_results)
   area_rank_results = area_rank_results[,order(names(area_rank_results))]
-  none_col = which(colnames(area_rank_results) == "None")
-  area_rank_results = cbind(area_rank_results[,-c(none_col),],
-                            area_rank_results[,"None"])
-  colnames(area_rank_results)[ncol(area_rank_results)] = "None"
+  none_col = which(colnames(area_rank_results) == "Blank")
+  if(length(none_col) > 0){
+    area_rank_results = cbind(area_rank_results[,-c(none_col),],
+                            area_rank_results[,"Blank"])
+    colnames(area_rank_results)[ncol(area_rank_results)] = "Blank"
+  }
   
   
   return(area_rank_results)
@@ -292,7 +300,11 @@ for(cat_function in cat_functions){
     } else {
       cat_suffix = "house_district"
     }
-    for (i in c(num_candidates:2)){
+    file_name = paste0("/top-", num_candidates, "-", cat_suffix, ".csv")
+    file_path = paste0(race_dir, file_name)
+    write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
+    table_to_write = eliminate_candidate(table_to_write, num_candidates, "Write-in", TRUE)
+    for (i in c((num_candidates - 1):2)){
       file_name = paste0("/top-", i, "-", cat_suffix, ".csv")
       file_path = paste0(race_dir, file_name)
       write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)

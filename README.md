@@ -46,9 +46,7 @@ Through examination of statements by the Alaska Division of Elections and compar
 
 Note that if a `Mark` is discarded in an earlier step, it is not present to have an impact in a later step. For example, a voter may rank candidate A as their 1st, 2nd and 3rd choice, while ranking B as their 4th choice. In this case, the `Mark`s for candidate A being the voters 2nd and 3rd choice are discarded in step 3. Thus, at step 4, there is now a gap of 3 between the voters 1st choice for A and 4th choice for B. This leads to the 4th choice vote for B also being discarded.
 ### Handling Write-In votes
-While the CVR indicates when a vote is for a write-in candidate, it does not indicate who was written in. The Alaska Division of Elections will only go through the process of determining write-in names if there are a sufficient number of write in votes. If there are not enough write-in votes, all write-in candidates are considered defeated and their votes transfer to the voter's next preference (if any) before the 1st round of tabulation. Therefore, a ballot that contains only a vote for a write-in candidate will be considered blank in the official summary report.
-
-However, this detail is not yet handled by this summarizer project, which treats "Write-in" as a single candidate. Here, votes for write-in candidates are reported. When write-in candidates are eliminated, those ballots are instead listed as "Exhausted", instead of blank.
+While the CVR indicates when a vote is for a write-in candidate, it does not indicate who was written in. The Alaska Division of Elections only goes through the process of determining write-in names if there are a sufficient number of write-in votes. Otherwise, all write-in candidates are considered defeated and their votes transfer to the voter's next preference (if any) before the 1st round of tabulation. A ballot that contains only a vote for a write-in candidate will be considered blank. As of December 2022, there has never been enough write-in votes in an Alaska RCV race to require the Alaska Division of Elections to manually determine which candidates had been written in. Therefore, we do not have the data for how that situation would be handled in the CVR, so the Summarizer currently assumes all write-in candidates are defeated before any other candidate.
 
 ### Accuracy
 Summarizing the 2022 Special General Election using the previous algorithm and comparing them to the [official results](https://www.elections.alaska.gov/results/22SSPG/RcvDetailedReport.pdf) yielded the following:
@@ -59,16 +57,14 @@ Actual|53,810|58,973|75,799
 Generated|53,810|58,971|75,799
 Error|0|2|0
 
-Transfers|Begich -> Palin|Begich -> Peltola|Begich -> None
+Transfers|Begich -> Palin|Begich -> Peltola|Begich -> Exhausted
 --|--|--|--
 Actual|27,053|15,467|11,290
 Generated|27,053|15,466|11,291
 Error|0|1|1
 
 #### Categorization of Votes
-There are a few known areas where votes are currently categorized in a different way than the Alaska Division of Elections.
-* As mentioned in the section "Handling Write-In votes", write-in votes are incorrectly all considered votes for a single candidate in this project. Ballots that only rank a write-in candidate are also considered "Exhausted", while they are officially categorized as "Blank"
-* When transferring votes between rounds, the Alaska Division of Elections distinguishes between "Exhausted" votes (presumably those with no further rankings) and "Overvotes" (presumably with addition invalid rankings). This project does not distinguish between those two categories, listing both as "Exhausted".
+The Alaska Division of Elections tabulates a category for "Overvotes" (presumably those ballots where a voter has ranked multiple candidates with the same ranking). This project currently does not identify overvotes in CSV outputs, instead treating them as exhausted ballots, or blanks.
 
 ## Notes for Developmers
 If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22sspg), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rvc_processor.R` before running the file.
