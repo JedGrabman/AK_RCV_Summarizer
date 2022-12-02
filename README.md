@@ -13,7 +13,7 @@ The Alaska Division of Elections releases a *Cast Vote Record* (CVR) following e
 >The Cast Vote Record (CVR) contains the votes and rankings on all the primary/special general ballots that were scanned. It does not include ballots that were only counted by hand...
 >The CVR is a JSON file, used by the ranked-choice software to tabulate the results. The CVR is not tabulation, it is a record of ballots.
 
-It is necesssary to closely look at CVR data, public statements by the Alaska Division of Elections, and official results of elections to determine how to tabulate summaries from the votes listed in the CVR data.
+It is necessary to closely look at CVR data, public statements by the Alaska Division of Elections, and official results of elections to determine how to tabulate summaries from the votes listed in the CVR data.
 
 ### Digital Representation of Ballots
 As mentioned above, the CVR stores data in JSON format. The bulk of the data in the CVR is the `Sessions` array, where each entry is roughly the equivalent of a ballot. Within each Session, is a `Contests` object, where contest represents a specific election/race, and identified by a `ContestId`. Within each `Contest`, there is a `Marks` object, representing how the voter filled out the ballot for that `Contest`.
@@ -22,7 +22,7 @@ For each race, a voter is provided with a grid of bubbles to fill out to represe
 
 Within the `Contest` object, these filled-in bubbles are represented in the `Marks` array. Each `Mark` includes the following values (as well as some additional fields):  
 * `CandidateId`: A numeric id representing the candidate the vote is for
-* `Rank`: The numeric value of the ranking assigned the candidate (i.e. `2` if the candidate was marked as the 2nd chaice.)
+* `Rank`: The numeric value of the ranking assigned the candidate (i.e. `2` if the candidate was marked as the 2nd choice.)
 * `MarkDensity`: A value from 0-100, representing how clearly the oval was filled in.
 * `IsAmbiguous`: `TRUE` or `FALSE`. Denotes whether the marking is ambiguous. This value appears to be `TRUE` whenever 0 < `MarkDensity` < 25 and `FALSE` otherwise.
 
@@ -35,7 +35,7 @@ Through examination of statements by the Alaska Division of Elections and compar
 2.) Eliminate overvotes. If a voter marks that they have an equal preference for 2 voters, then those marks and any subsequent marks are discarded. 
 * **Example:** A voter ranks candidates A, B, C and D as their 1st, 2nd, 2nd and 3rd choice respectively. Because both B & C were both ranked 2nd, this is an overvote, and those marks are discarded. Additionally, the 3rd choice vote for D is also discarded, as it is subsequent to an overvote. The 1st choice vote for A is retained, because it was made before the overvote, not after it.
 
-3.) Eliminate all but the 1st occurence of a candidate. If a voter lists the same candidate multiple times, only the earliest ranking is retained. 
+3.) Eliminate all but the 1st occurrence of a candidate. If a voter lists the same candidate multiple times, only the earliest ranking is retained. 
 * **Example:** A voter ranks candidate A as their 1st choice and candidate B as their 2nd and 3rd choice. The `Mark` representing candidate B as the voters 2nd choice is retained, because it is the voter's earliest selection for candidate B. However, the `Mark` representing candidate B as the voters 3rd choice is discarded.
 
 4.) If the difference between two consecutive ranks is 3 or greater, eliminate all marks after the gap. 
@@ -63,7 +63,7 @@ Actual|27,053|15,467|11,243|47
 Generated|27,053|15,466|11,243|48
 Error|0|1|0|1
 
-## Notes for Developmers
+## Notes for Developers
 If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22sspg), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rvc_processor.R` before running the file.
 
 This project was developed with the top priority of making summary data available shortly after the release of the 2022 CVR data. As such, things like code clarity, documentation, efficiency and usability were not prioritized. As an open-source project, users are welcome to use the code as it is now, but should be aware that there may be substantial (i.e breaking) updates to the codebase shortly.
