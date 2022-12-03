@@ -6,7 +6,7 @@ This project is not affiliated with the State of Alaska and the summaries provid
 In 2020, Alaska voters approved a new voting system, which includes a new primary system and ranked choice voting (RCV) in general elections. Under this system, up to 4 candidates may advance from the primary to the general election and voters may rank these candidates as their 1st choice, 2nd choice and so on. Please refer to the [Alaska Division of Elections's page on RCV](https://www.elections.alaska.gov/RCV.php) for a general overview on how this is implemented in Alaska.
 
 ## Summaries
-This project generates precinct-level and house district-level summaries of voter preferences for each race. Within the `Results > 2022` folder, there is a folder per each race. Each race folder has a number of .CSV files, named as `Top-{n}-{division}`, where n = The number of remaining candidates and division is either "precinct" or "house-district". Please note that this data does not exactly follow the format used by the Alaska Division of Elections and may contain errors. Please review the "Accuracy" section for more details on some known issues.
+This project generates precinct-level and house district-level summaries of voter preferences for each race. Within the `Results > 2022` folder, there is a folder for each race. Each race folder has a number of .CSV files, named as `Top-{n}-{division}`, where n = The number of remaining candidates and division is either "precinct" or "house-district". Additionally, there are head-to-head .CSV files for every pair of candidates in a race, named `{candidate1}_{candidate2}`. Please note that the data does not exactly follow the format used by the Alaska Division of Elections and may contain errors. Please review the "Accuracy" section for more details on known issues.
 
 ## Tabulating Ballots
 The Alaska Division of Elections releases a *Cast Vote Record* (CVR) following each election. 
@@ -55,13 +55,13 @@ Summarizing the 2022 Special General Election using the previous algorithm and c
 --|--:|--:|--:|--:|--:
 Actual|53,810|58,973|75,799|3,412|295
 Generated|53,810|58,971|75,799|3,411|298
-Error|0|2|0|1|3
+Error|0|-2|0|-1|+3
 
 Transfers|Begich -> Palin|Begich -> Peltola|Begich -> Exhausted|Begich -> Overvote
 --|--:|--:|--:|--:
 Actual|27,053|15,467|11,243|47
 Generated|27,053|15,466|11,243|48
-Error|0|1|0|1
+Error|0|-1|0|+1
 
 ## Notes for Developers
 If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22sspg), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rvc_processor.R` before running the file.

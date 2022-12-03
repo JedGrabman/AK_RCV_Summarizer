@@ -145,14 +145,15 @@ get_last_place = function(df){
   
 }
 
-eliminate_candidate = function(df, num_ranked, candidate_to_eliminate, is_write_in = FALSE){
+eliminate_candidates = function(df, num_ranked, candidates_to_eliminate, is_write_in = FALSE){
   results_df = as.data.frame(c(0))[-1,-1]
+  num_candidates_to_eliminate = length(candidates_to_eliminate)
+  name_rows = c(1:(num_ranked - 1 - num_candidates_to_eliminate))
   vote_rows = c(num_ranked:nrow(df))
-  name_rows = c(1:(num_ranked - 2))
   
   for(i in c(ncol(df):1)){
     col_name_order = df[c(1:(num_ranked - 1)),i]
-    non_elim_candidates = col_name_order[col_name_order != candidate_to_eliminate]
+    non_elim_candidates = col_name_order[!(col_name_order %in% candidates_to_eliminate)]
     non_elim_candidates = non_elim_candidates[non_elim_candidates != ""]
     if(length(non_elim_candidates) == 0){
       if (is_write_in){
@@ -161,31 +162,31 @@ eliminate_candidate = function(df, num_ranked, candidate_to_eliminate, is_write_
         non_elim_candidates = "Exhausted"
       }
     }
-    if(length(non_elim_candidates) == num_ranked - 1){
-      non_elim_candidates = non_elim_candidates[c(1:(num_ranked - 2))]
+    if(length(non_elim_candidates) >= num_ranked - num_candidates_to_eliminate){
+      non_elim_candidates = non_elim_candidates[c(1:(num_ranked - num_candidates_to_eliminate - 1))]
     }
     num_non_elim = length(non_elim_candidates)
     pasted_names = paste(non_elim_candidates, collapse = ";")
-    non_elim_candidates = c(non_elim_candidates, rep("", num_ranked - num_non_elim - 2))
+    non_elim_candidates = c(non_elim_candidates, rep("", num_ranked - num_non_elim - num_candidates_to_eliminate - 1))
     if (pasted_names %in% names(results_df)){
-      current_votes = results_df[vote_rows - 1, pasted_names]
+      current_votes = results_df[vote_rows - num_candidates_to_eliminate, pasted_names]
       new_votes = df[vote_rows ,i]
       updated_votes = as.character(as.numeric(current_votes) + as.numeric(new_votes))
-      results_df[vote_rows - 1, pasted_names] = updated_votes
+      results_df[vote_rows - num_candidates_to_eliminate, pasted_names] = updated_votes
       
     } else {
       results_df[name_rows, pasted_names] = non_elim_candidates
-      results_df[vote_rows - 1, pasted_names] = df[vote_rows ,i]
+      results_df[vote_rows - num_candidates_to_eliminate, pasted_names] = df[vote_rows ,i]
     }
     
   }
-  rownames(results_df) = rownames(df)[-c(num_ranked - 1)]
+  rownames(results_df) = rownames(df)[-c((num_ranked - num_candidates_to_eliminate):(num_ranked - 1))]
   return(results_df)
 }
 
 eliminate_last_place = function(df, num_ranked){
   candidate_last = get_last_place(df)
-  return(eliminate_candidate(df, num_ranked, candidate_last))
+  return(eliminate_candidates(df, num_ranked, candidate_last))
 }
 
 process_session_data = function(sessions, race_id, get_area_desc, race_candidates_df){
@@ -198,7 +199,6 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
   area_descs = unique(session_areas)
   area_results = as.data.frame(c(0))[-1,-1]
   for (i in c(1:length(area_descs))){
-    print(i)
     area_desc = area_descs[i]
     area_sessions = sessions[session_areas == area_desc]
     area_rankings = lapply(area_sessions, function(x) get_ranking(x, race_id))
@@ -280,38 +280,56 @@ cat_functions = c(get_pp_desc, get_hd_desc)
 for(cat_function in cat_functions){
   for(race_id in race_ids){
     race_description = rcv_contests[rcv_contests$Id == race_id, ]$Description
-    race_dir = paste0("../Summaries/", year, "/", gsub("[ .()]", "", race_description))
-    race_candidates_df = candidate_df[candidate_df$ContestId == race_id,]
-    
-    num_candidates = nrow(race_candidates_df)
-    
-    precinct_results = process_session_data(sessions, 
-                                            race_id, 
-                                            cat_function,
-                                            race_candidates_df)
-    
-    table_to_write = precinct_results
-    
-    
-    if (!dir.exists(race_dir)){
-      dir.create(race_dir)
-    }
-    
     if (identical(cat_function, get_pp_desc)){
       cat_suffix = "precinct"
     } else {
       cat_suffix = "house_district"
     }
-    file_name = paste0("/top-", num_candidates, "-", cat_suffix, ".csv")
+    print(paste("Processing", cat_suffix, "data for", race_description))
+    
+    race_dir = paste0("../Summaries/", year, "/", gsub("[ .()]", "", race_description), "/")
+    if (!dir.exists(race_dir)){
+      dir.create(race_dir)
+    }
+    
+    race_candidates_df = candidate_df[candidate_df$ContestId == race_id,]
+    
+    num_candidates = nrow(race_candidates_df)
+    
+    print("...aggregating data")
+    area_results = process_session_data(sessions, 
+                                        race_id, 
+                                        cat_function,
+                                        race_candidates_df)
+    print("...RCV caculations")
+    
+    file_name = paste0("top-", num_candidates, "-", cat_suffix, ".csv")
     file_path = paste0(race_dir, file_name)
-    write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
-    table_to_write = eliminate_candidate(table_to_write, num_candidates, "Write-in", TRUE)
+    write.table(area_results, sep = ",", file = file_path, col.names = FALSE)
+    area_results_wo_writein = eliminate_candidates(area_results, num_candidates, "Write-in", TRUE)
+    table_to_write = area_results_wo_writein
     for (i in c((num_candidates - 1):2)){
-      file_name = paste0("/top-", i, "-", cat_suffix, ".csv")
+      file_name = paste0("top-", i, "-", cat_suffix, ".csv")
       file_path = paste0(race_dir, file_name)
       write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
       if (i != 2){
         table_to_write = eliminate_last_place(table_to_write, i)
+      }
+    }
+    regular_candidates = race_candidates_df$Description[race_candidates_df$Type == "Regular"]
+    if (length(regular_candidates) > 2){
+      print("...head-to-head results")
+      race_lnames = sapply(strsplit(regular_candidates, ","), function(x) x[1])
+      for(candidate_1_idx in c(1:(length(race_lnames) - 1))){
+        for(candidate_2_idx in c((candidate_1_idx+1):length(race_lnames))){
+          candidates_to_eliminate = race_lnames[c(-candidate_1_idx, -candidate_2_idx)]
+          table_to_write = eliminate_candidates(area_results_wo_writein, num_candidates - 1, candidates_to_eliminate)
+          candidate_1_lname = race_lnames[candidate_1_idx]
+          candidate_2_lname = race_lnames[candidate_2_idx]
+          file_name = paste0(candidate_1_lname, "_", candidate_2_lname, "-", cat_suffix, ".csv")
+          file_path = paste0(race_dir, "/", file_name)
+          write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
+        }
       }
     }
   }
