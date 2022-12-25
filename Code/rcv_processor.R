@@ -23,6 +23,18 @@ eliminate_ambiguous_marks = function(marks){
   return(marks[!is_mark_ambiguous(marks)])
 }
 
+is_mark_bad_writein = function(mark){
+  if ("WriteinDensity" %in% attributes(mark)$names){
+    return(mark$WriteinDensity == 0)
+  } else {
+    return(FALSE)
+  }
+}
+
+eliminate_bad_writeins = function(marks){
+  return(marks[!sapply(marks, is_mark_bad_writein)])
+}
+
 eliminate_overvotes = function(marks_list){
   if(length(marks_list) == 0){
     return(marks_list)
@@ -84,19 +96,20 @@ eliminate_skips = function(marks){
   if (first_gap == 1){
     return(NULL)
   } else {
-    return(unlist(marks[1:(first_gap - 1)]))
+    return(unlist(marks[ranks[1:(first_gap - 1)]]))
   }
 }
 
 get_ranking = function(session, race_id){
-  marks = get_marks(session, race_id)
-  unambiguous_marks = eliminate_ambiguous_marks(marks)
-  marks_list = marks_to_list(unambiguous_marks)
-  marks_no_over = eliminate_overvotes(marks_list)
-  marks_no_dups = eliminate_dup_candidates(marks_no_over)
-  marks_no_skips = eliminate_skips(marks_no_dups)
-  return(marks_no_skips)
-}
+   marks = get_marks(session, race_id)
+   unambiguous_marks = eliminate_ambiguous_marks(marks)
+   good_marks = eliminate_bad_writeins(unambiguous_marks)
+   marks_list = marks_to_list(good_marks)
+   marks_no_over = eliminate_overvotes(marks_list)
+   marks_no_dups = eliminate_dup_candidates(marks_no_over)
+   marks_no_skips = eliminate_skips(marks_no_dups)
+   return(marks_no_skips)
+ }
 
 get_precinct_portion = function(session){
   return(session$Original$PrecinctPortionId)
@@ -181,6 +194,9 @@ eliminate_candidates = function(df, num_ranked, candidates_to_eliminate, is_writ
     
   }
   rownames(results_df) = rownames(df)[-c((num_ranked - num_candidates_to_eliminate):(num_ranked - 1))]
+  results_df = results_df[,order(colnames(results_df))]
+  results_df = cbind(results_df[,!(colnames(results_df) %in% c("Blank", "Exhausted", "Overvote"))], results_df[,colnames(results_df) %in% c("Blank", "Exhausted", "Overvote")])
+  
   return(results_df)
 }
 
@@ -195,12 +211,16 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
   race_candidate_names = c(race_candidates_df$Description, "Overvote")
   race_lnames = sapply(strsplit(race_candidate_names, ","), function(x) x[1])
   
-  session_areas = sapply(sessions, get_area_desc)
+  contest_district_id = contest_df[contest_df$Id == race_id,]$DistrictId
+  contest_precinct_portions = DPPM_DF[DPPM_DF$DistrictId == contest_district_id,]$PrecinctPortionId
+  contest_sessions = sessions[SESSIONS_PP %in% contest_precinct_portions]
+  
+  session_areas = sapply(contest_sessions, get_area_desc)
   area_descs = unique(session_areas)
   area_results = as.data.frame(c(0))[-1,-1]
   for (i in c(1:length(area_descs))){
     area_desc = area_descs[i]
-    area_sessions = sessions[session_areas == area_desc]
+    area_sessions = contest_sessions[session_areas == area_desc]
     area_rankings = lapply(area_sessions, function(x) get_ranking(x, race_id))
     has_ranking = sapply(area_rankings, length) > 0
     area_rankings[has_ranking] = lapply(area_rankings[has_ranking], function(x) x[1:min(length(x), num_candidates - 1)])
@@ -240,12 +260,40 @@ process_session_data = function(sessions, race_id, get_area_desc, race_candidate
   return(area_rank_results)
 }
 
-cvr_dir = "../Data/CVR_Export_20220908084311/"
-cvr_file = paste0(cvr_dir, "CvrExport.json")
-cvr_data = jsonlite::read_json(cvr_file)
-sessions = cvr_data$Sessions
+cvr_dir = "../Data/CVR_Export/"
 
-year = unlist(strsplit(cvr_data$ElectionId, " "))[1]
+cvr_export_file = paste0(cvr_dir, "CvrExport.RData")
+if (file.exists(cvr_export_file)){
+  cvr_data = readRDS(cvr_export_file)
+} else {
+  print("CVR combined file not found. Combining data now...")
+  dir_files = list.files(cvr_dir)
+  cvr_files = dir_files[grepl("CvrExport.*json", dir_files)]
+  num_files = length(cvr_files)
+  if(num_files == 0){
+    stop("No CVR JSON files found!")
+  }
+  cvr_files = paste0(cvr_dir, cvr_files)
+  print(paste0("Reading file 1/", num_files))
+  cvr_data = jsonlite::read_json(cvr_files[1])
+  if (length(cvr_files) > 1){
+    for (i in c(2:length(cvr_files))){
+      print(paste0("Reading file ", i, "/", num_files))
+      cvr_file = cvr_files[i]
+      cvr_data_section = jsonlite::read_json(cvr_file)
+      cvr_data$Sessions = c(cvr_data$Sessions, cvr_data_section$Sessions)
+    }
+  }
+  print("Saving combined file...")
+  saveRDS(cvr_data, file = cvr_export_file)
+  print("Saved!")
+}
+
+sessions = cvr_data$Sessions
+SESSIONS_PP = sapply(sessions, get_precinct_portion)
+
+year_index = regexpr("[[:digit:]]{4}", cvr_data$ElectionId)
+year = substr(cvr_data$ElectionId, year_index, year_index + 3)
 
 cm_file = paste0(cvr_dir, "CandidateManifest.json")
 candidate_manifest = jsonlite::read_json(cm_file)$List
@@ -287,7 +335,7 @@ for(cat_function in cat_functions){
     }
     print(paste("Processing", cat_suffix, "data for", race_description))
     
-    race_dir = paste0("../Summaries/", year, "/", gsub("[ .()]", "", race_description), "/")
+    race_dir = paste0("../Summaries/", year, "/", gsub("[ .()/]", "", race_description), "/")
     if (!dir.exists(race_dir)){
       dir.create(race_dir)
     }
@@ -306,29 +354,31 @@ for(cat_function in cat_functions){
     file_name = paste0("top-", num_candidates, "-", cat_suffix, ".csv")
     file_path = paste0(race_dir, file_name)
     write.table(area_results, sep = ",", file = file_path, col.names = FALSE)
-    area_results_wo_writein = eliminate_candidates(area_results, num_candidates, "Write-in", TRUE)
-    table_to_write = area_results_wo_writein
-    for (i in c((num_candidates - 1):2)){
-      file_name = paste0("top-", i, "-", cat_suffix, ".csv")
-      file_path = paste0(race_dir, file_name)
-      write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
-      if (i != 2){
-        table_to_write = eliminate_last_place(table_to_write, i)
+    if (num_candidates > 2){
+      area_results_wo_writein = eliminate_candidates(area_results, num_candidates, "Write-in", TRUE)
+      table_to_write = area_results_wo_writein
+      for (i in c((num_candidates - 1):2)){
+        file_name = paste0("top-", i, "-", cat_suffix, ".csv")
+        file_path = paste0(race_dir, file_name)
+        write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
+        if (i != 2){
+          table_to_write = eliminate_last_place(table_to_write, i)
+        }
       }
-    }
-    regular_candidates = race_candidates_df$Description[race_candidates_df$Type == "Regular"]
-    if (length(regular_candidates) > 2){
-      print("...head-to-head results")
-      race_lnames = sapply(strsplit(regular_candidates, ","), function(x) x[1])
-      for(candidate_1_idx in c(1:(length(race_lnames) - 1))){
-        for(candidate_2_idx in c((candidate_1_idx+1):length(race_lnames))){
-          candidates_to_eliminate = race_lnames[c(-candidate_1_idx, -candidate_2_idx)]
-          table_to_write = eliminate_candidates(area_results_wo_writein, num_candidates - 1, candidates_to_eliminate)
-          candidate_1_lname = race_lnames[candidate_1_idx]
-          candidate_2_lname = race_lnames[candidate_2_idx]
-          file_name = paste0(candidate_1_lname, "_", candidate_2_lname, "-", cat_suffix, ".csv")
-          file_path = paste0(race_dir, "/", file_name)
-          write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
+      regular_candidates = race_candidates_df$Description[race_candidates_df$Type == "Regular"]
+      if (length(regular_candidates) > 2){
+        print("...head-to-head results")
+        race_lnames = sapply(strsplit(regular_candidates, ","), function(x) x[1])
+        for(candidate_1_idx in c(1:(length(race_lnames) - 1))){
+          for(candidate_2_idx in c((candidate_1_idx+1):length(race_lnames))){
+            candidates_to_eliminate = race_lnames[c(-candidate_1_idx, -candidate_2_idx)]
+            table_to_write = eliminate_candidates(area_results_wo_writein, num_candidates - 1, candidates_to_eliminate)
+            candidate_1_lname = gsub("/", "", race_lnames[candidate_1_idx])
+            candidate_2_lname = gsub("/", "", race_lnames[candidate_2_idx])
+            file_name = paste0(candidate_1_lname, "_", candidate_2_lname, "-", cat_suffix, ".csv")
+            file_path = paste0(race_dir, "/", file_name)
+            write.table(table_to_write, sep = ",", file = file_path, col.names = FALSE)
+          }
         }
       }
     }
