@@ -36,7 +36,7 @@ Through examination of statements by the Alaska Division of Elections and compar
 
 1.) Eliminate ambiguous marks. Any `Mark` that has `IsAmbiguous` set to `TRUE` is discarded and has no effect on tabulation  
 2.) Eliminate marks for write-in votes with a `WriteinDensity` of 0. These votes are in a row for a write-in vote, but have no candidate written in, so they would be impossible to assign.  
-3.) Eliminate overvotes. If a voter marks that they have an equal preference for 2 voters, then those marks and any subsequent marks are discarded. 
+3.) Eliminate overvotes. If a voter marks that they have an equal preference for 2 candidates, then those marks and any subsequent marks are discarded. 
 * **Example:** A voter ranks candidates A, B, C and D as their 1st, 2nd, 2nd and 3rd choice respectively. Because both B & C were both ranked 2nd, this is an overvote, and those marks are discarded. Additionally, the 3rd choice vote for D is also discarded, as it is subsequent to an overvote. The 1st choice vote for A is retained, because it was made before the overvote, not after it.
 
 4.) Eliminate all but the 1st occurrence of a candidate. If a voter lists the same candidate multiple times, only the earliest ranking is retained. 
@@ -57,7 +57,7 @@ Summarizing the 2022 Senate Election using the previous algorithm and comparing 
 
 1st Choice Results|Chesbro|Kelley|Murkowski|Tshibaka|Blanks|Overvotes
 --|--:|--:|--:|--:|--:|--:
-Actual|28,233|8,575|114,118|112,101|3271|499
+Actual|28,233|8,575|114,118|112,101|3,271|499
 Generated|28,232|8,575|114,118|112,096|3,273|503
 Error|-1|0|0|-5|+2|+4
 
