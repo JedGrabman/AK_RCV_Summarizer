@@ -18,7 +18,7 @@ The Alaska Division of Elections releases a *Cast Vote Record* (CVR) following e
 It is necessary to closely look at CVR data, public statements by the Alaska Division of Elections, and official results of elections to determine how to tabulate summaries from the votes listed in the CVR data.
 
 ### Digital Representation of Ballots
-As mentioned above, the CVR stores data in JSON format. The bulk of the data in the CVR is the `Sessions` array, where each entry is roughly the equivalent of a ballot. Within each Session, is a `Contests` object, where contest represents a specific election/race, and identified by a `ContestId`. Within each `Contest`, there is a `Marks` object, representing how the voter filled out the ballot for that `Contest`.
+As mentioned above, the CVR stores data in JSON format. The bulk of the data in the CVR is the `Sessions` array, where each entry is roughly the equivalent of a ballot. Within each Session, is a `Contests` object, where a contest represents a specific election/race and is identified by a `ContestId`. Within each `Contest`, there is a `Marks` object, representing how the voter filled out the ballot for that `Contest`.
 
 For each race, a voter is provided with a grid of bubbles to fill out to represent their preferences. Each row of the grid is labeled with a candidate's name, while each column is labeled "1st choice", "2nd choice" and so on. Thus, a voter may indicate that a candidate is their 1st choice by filling in the bubble in the candidate's row and the 1st choice column (and so on for their subsequent choices).
 
@@ -35,7 +35,7 @@ Note that the `Marks` represent what a voter filled in, which may include invali
 Through examination of statements by the Alaska Division of Elections and comparison to official election results, I believe the procedure for moving for converting from the `Marks` object to an official judgment of the voters preferences is as follows:
 
 1.) Eliminate ambiguous marks. Any `Mark` that has `IsAmbiguous` set to `TRUE` is discarded and has no effect on tabulation  
-2.) Eliminate marks for write-in votes with a `WriteinDensity` of 0. These votes are in a row for a write-in vote, but have no candidate written in, so they would be impossible to assign.
+2.) Eliminate marks for write-in votes with a `WriteinDensity` of 0. These votes are in a row for a write-in vote, but have no candidate written in, so they would be impossible to assign.  
 3.) Eliminate overvotes. If a voter marks that they have an equal preference for 2 voters, then those marks and any subsequent marks are discarded. 
 * **Example:** A voter ranks candidates A, B, C and D as their 1st, 2nd, 2nd and 3rd choice respectively. Because both B & C were both ranked 2nd, this is an overvote, and those marks are discarded. Additionally, the 3rd choice vote for D is also discarded, as it is subsequent to an overvote. The 1st choice vote for A is retained, because it was made before the overvote, not after it.
 
