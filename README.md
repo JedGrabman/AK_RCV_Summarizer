@@ -74,6 +74,6 @@ Generated|20,571|2,222|6,301|38
 Error|0|-2|0|0
 
 ## Notes for Developers
-If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22genr), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rvc_processor.R` before running the file.
+If you wish to use the code directly, you'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22genr), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rcv_processor.R` before running the file.
 
 This project was developed with the top priority of making summary data available shortly after the release of the 2022 CVR data. As such, things like code clarity, documentation, efficiency and usability were not prioritized. As an open-source project, users are welcome to use the code as it is now, but should be aware that there may be substantial (i.e breaking) updates to the codebase shortly.
