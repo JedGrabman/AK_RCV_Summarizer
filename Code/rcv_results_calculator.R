@@ -158,8 +158,7 @@ reduce_candidates = function(summary_df, candidates_to_eliminate = NA,
 write_rankings_df = function(rankings_df, 
                                       contest_id, 
                                       location = c("HD", "Precinct"),
-                                      file_mode = c("Top", "Candidates"),
-                                      move_overvotes = TRUE){
+                                      file_mode = c("Top", "Candidates")){
   location = match.arg(location)
   file_mode = match.arg(file_mode)
   if (location == "HD"){
@@ -192,12 +191,8 @@ write_rankings_df = function(rankings_df,
     ranking_df_count = ranking_df_count %>%
       select(order(colnames(ranking_df_count))) %>%
       relocate(as.name(location_description)) %>%
-      relocate(starts_with("Blank"), starts_with("Exhausted"), .after = last_col()) %>%
-      arrange(!!location_description)  
-    if (move_overvotes){
-    ranking_df_count = ranking_df_count %>%
-                        relocate(starts_with("Overvote"), .after = last_col())
-    }
+      relocate(starts_with("Blank"), starts_with("Exhausted"), starts_with("Overvote"), .after = last_col()) %>%
+      arrange(!!location_description)
   }
   if (file_mode == "Candidates"){
    ranking_df_count = ranking_df_count %>%
@@ -323,7 +318,7 @@ write_top_contest_results = function(rankings_by_location, contest_id,
     group_by_at(vars(matches("Description"), paste0("Rank_", c(1:(num_candidates - 1))))) %>%
     summarize(tot_votes = sum(tot_votes), .groups = "drop")
 
-  write_rankings_df(rankings_table, contest_id, location, move_overvotes = FALSE)  
+  write_rankings_df(rankings_table, contest_id, location)  
   
   candidates = CANDIDATE_DF %>% 
     filter(ContestId == contest_id, Type == "Regular") %>%
