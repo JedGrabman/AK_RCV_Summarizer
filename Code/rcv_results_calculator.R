@@ -237,8 +237,8 @@ write_rankings_df = function(rankings_df,
   if (file_mode == "Top"){
     file_name = paste0("top-", candidates_count, "-", location_suffix, ".csv")
   } else {
-    candidates_in_rankings = CANDIDATE_DF$Id[CANDIDATE_DF$Id %in% candidates_in_rankings]
-    candidate_names = get_candidate_names(candidates_in_rankings, sep = "_")
+    candidate_names = sort(sapply(candidates_in_rankings, get_candidate_name))
+    candidate_names = paste0(candidate_names, collapse = "_")
     candidate_names = str_remove_all(candidate_names, "/")
     candidate_names = str_remove_all(candidate_names, "-")
     file_name = paste0(sort(candidate_names), "-", location_suffix, ".csv")
