@@ -88,7 +88,7 @@ There are 2 major steps, processing the CVR and generating the summaries from th
 You'll need to download the CVR from the [Alaska Division of Elections](https://www.elections.alaska.gov/election-results/e/?id=22genr), unzip the file and add it to the directory, then update the value of `cvr_dir` in `rcv_processor.R` before running the file. This will create a number of files / folders within the provided directory. In particular, there are a number of `.rdata` files which provide an easier data structure for the rest of the project to work with. These are included in this repository.
 
 ### Generating Summaries
-Running `rcv_results_calculator.R` will produce the summaries present in this repository
+Running `rcv_results_calculator.R` will produce the summaries present in this repository. Update the value of `YEAR` at the top of the file before beginning to match the year of the election cycle you are processing
 
 ### Additional data analysis
 This project's main goal is to make more granular data about Alaska's elections publicly available. As such, things like code clarity, documentation, efficiency and usability were not prioritized. As an open-source project, users are welcome to use the code as it is now, but should be aware that there may be substantial (i.e breaking) updates to the codebase. If you need a specific dataset which is not covered by these summaries, feel free to contact me (or open an issue) and I may be able to assist.

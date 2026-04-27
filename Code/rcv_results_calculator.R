@@ -4,6 +4,7 @@ library(stringr)
 
 source("globals.r")
 
+YEAR = 2022
 
 contest_outstacks_df = CONTEST_OUTSTACKS_DF %>% 
   left_join(OUTSTACK_DF, join_by(OutstackConditionId == Id)) %>%
@@ -226,9 +227,8 @@ write_rankings_df = function(rankings_df,
   num_rankings = nrow(ranking_headers)
   ranking_df_table[c(1:nrow(ranking_headers)),1] = c(1:num_rankings)
   
-  year = 2022
   race_description = CONTEST_DF[CONTEST_DF$Id == contest_id,]$Description
-  race_dir = paste0("../Summaries/", year, "/", gsub("[ .()/]", "", race_description), "/")
+  race_dir = paste0("../Summaries/", YEAR, "/", gsub("[ .()/]", "", race_description), "/")
   
   if (!dir.exists(race_dir)){
     dir.create(race_dir)
@@ -406,9 +406,7 @@ contest_ids_rcv = CONTEST_DF %>%
                     select(Id) %>% 
                     unlist()
 
-#TODO don't hardcode
-year = 2022
-year_dir = paste0("../Summaries/", year)
+year_dir = paste0("../Summaries/", YEAR)
 if (!dir.exists(year_dir)){
   dir.create(year_dir)
 }
