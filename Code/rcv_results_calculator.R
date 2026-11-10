@@ -4,7 +4,7 @@ library(stringr)
 
 source("globals.r")
 
-YEAR = 2022
+YEAR = 2026
 
 contest_outstacks_df = CONTEST_OUTSTACKS_DF %>% 
   left_join(OUTSTACK_DF, join_by(OutstackConditionId == Id)) %>%
@@ -400,6 +400,9 @@ remove_skips = function(candidate_by_session_rank, rank_max){
   colnames(rankings_by_session) = rankings_colnames
   return(rankings_by_session)
 }
+
+CANDIDATE_DF[CANDIDATE_DF$Description == "Sullivan, Daniel J. Jr.",]$Description = "SullivanJ, Daniel J. Jr."
+CANDIDATE_DF[CANDIDATE_DF$Description == "Sullivan, Dan S.",]$Description = "SullivanS, Dan S."
 
 contest_ids_rcv = CONTEST_DF %>% 
                     filter(NumOfRanks > 0) %>% 
