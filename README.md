@@ -3,7 +3,7 @@
 ## 2026 Data
 
 2026 data is incomplete and additional ballots are expected. The most up to date information can be found at the [Alaska Division of Elections page](https://www.elections.alaska.gov/election-results/)
-This project was last updated on November 11th.
+This project was updated on November 14th.
 
 ## Disclaimer
 This project is not affiliated with the State of Alaska and the summaries provided here are not used for any official purposes. These summaries may contain errors. For official data, please refer to [Election Results page on the Alaska Division of Elections website](https://www.elections.alaska.gov/election-results/).
